@@ -2,6 +2,7 @@ package avishkaar.com.mvvm;
 
 import android.app.Application;
 import android.os.AsyncTask;
+import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 
@@ -15,53 +16,29 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 import static avishkaar.com.mvvm.RetrofitApi.BASE_URL;
 
-public class Repository {
+class Repository {
     private LiveData<List<User>> allUsers;
-
+    private static final String TAG = "Repository";
     private UserDao userDao;
 
-    public Repository(Application application) {
+    Repository(Application application) {
         DatabaseClass database = DatabaseClass.getInstance(application);
         userDao = database.databaseDAO();
         allUsers = userDao.getAllUsers();
-        Retrofit retrofit = new Retrofit.Builder().baseUrl(BASE_URL).addConverterFactory(GsonConverterFactory.create()).build();
-        RetrofitApi retrofitApi = retrofit.create(RetrofitApi.class);
-
-        Call<List<User>> userCall = retrofitApi.get();
-        userCall.enqueue(new Callback<List<User>>() {
-            @Override
-            public void onResponse(Call<List<User>> call, Response<List<User>> response) {
-                List<User> userList = response.body();
-                for (User user: userList
-                     ) {
-                    user = new User(user.title,user.title,user.userId);
-                    insert(user);
-
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<User>> call, Throwable t) {
-
-            }
-        });
-
-
+        fetchFromRetrofit(this);
     }
 
     public void insert(User user)
     {
         new InsertIntoDatabase(userDao).execute(user);
     }
-
     public  void update(User user)
     {
         new UpdateUser(userDao).execute(user);
     }
-
     public void delete(User user)
     {
-        new UpdateUser(userDao).execute(user);
+        new DeleteFromDatabase(userDao).execute(user);
     }
     public void deleteAllUser()
     {
@@ -70,6 +47,44 @@ public class Repository {
     public LiveData<List<User>> getAllUsers()
     {
         return allUsers;
+    };
+    public void fetchFromRetrofit(Repository repository){
+        new FetchFromRetrofit(repository).execute();
+    }
+
+
+    static class FetchFromRetrofit extends AsyncTask<Void,Void,Void>{
+        Repository repository;
+        FetchFromRetrofit(Repository repository) {
+            this.repository = repository;
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            Retrofit retrofit = new Retrofit.Builder().baseUrl(BASE_URL).addConverterFactory(GsonConverterFactory.create()).build();
+            RetrofitApi retrofitApi = retrofit.create(RetrofitApi.class);
+
+            Call<List<User>> userCall = retrofitApi.get();
+
+            userCall.enqueue(new Callback<List<User>>() {
+                @Override
+                public void onResponse(Call<List<User>> call, Response<List<User>> response) {
+                    List<User> userList = response.body();
+                    for (User user: userList
+                    ) {
+                        user = new User(user.title,user.title,user.userId);
+                        repository.insert(user);
+
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<List<User>> call, Throwable t) {
+
+                }
+            });
+            return null;
+        }
     }
 
 

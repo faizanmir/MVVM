@@ -22,6 +22,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity implements UserDetailsFragment.OnFragmentInteractionListener{
     UserDetailsFragment fragment;
     UserViewModel userViewModel;
+    int flag=0;
     private static final String TAG = "MainActivity";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,10 +44,17 @@ public class MainActivity extends AppCompatActivity implements UserDetailsFragme
             }
         });
 
+
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                getSupportFragmentManager().beginTransaction().add(R.id.frameForFragment,fragment).commit();
+                if(flag==0) {
+                    getSupportFragmentManager().beginTransaction().add(R.id.frameForFragment, fragment).commit();
+                    flag=1;
+                }else
+                {
+                    getSupportFragmentManager().beginTransaction().replace(R.id.frameForFragment,fragment).commit();
+                }
             }
         });
 

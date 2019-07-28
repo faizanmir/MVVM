@@ -15,7 +15,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 
 public abstract class DatabaseClass extends RoomDatabase{
     private static final String TAG = "DatabaseClass";
-    static DatabaseClass db;
+    private static DatabaseClass instance;
+
     private static RoomDatabase.Callback roomDatabaseCallback = new RoomDatabase.Callback(){
 
         @Override
@@ -28,18 +29,19 @@ public abstract class DatabaseClass extends RoomDatabase{
         @Override
         public void onOpen(@NonNull SupportSQLiteDatabase db) {
             super.onOpen(db);
+            new DeleteAllUser().execute();
 
         }
     };
 
 
-     public static DatabaseClass getInstance(Context context) {
-        if(db==null)
+     static DatabaseClass getInstance(Context context) {
+        if(instance==null)
         {
-            db = Room.databaseBuilder(context,DatabaseClass.class,"LocalDatabase").addCallback(roomDatabaseCallback).build();
+            instance = Room.databaseBuilder(context,DatabaseClass.class,"LocalDatabase").addCallback(roomDatabaseCallback).build();
         }
-        Log.e(TAG, "newInstance:Database instance  " + "Returned Previous Instance" );
-        return db;
+        Log.e(TAG, "newInstance:Database instance  " + "Returned already created database" );
+        return instance;
     }
 
     public abstract UserDao databaseDAO();
@@ -48,10 +50,19 @@ public abstract class DatabaseClass extends RoomDatabase{
      public static class PopulateDatabase extends AsyncTask<Void,Void,Void>{
          @Override
          protected Void doInBackground(Void... voids) {
-             db.databaseDAO().insert(new User("Body1","Title 1","UserID 1"));
-             db.databaseDAO().insert(new User("Body2","Title 2","UserID 2"));
-             db.databaseDAO().insert(new User("Body3","Title 3","UserID 3"));
-             db.databaseDAO().insert(new User("Body4","Title 4","UserID 4"));
+             instance.databaseDAO().insert(new User("Body1","Title 1","UserID 1"));
+             instance.databaseDAO().insert(new User("Body2","Title 2","UserID 2"));
+             instance.databaseDAO().insert(new User("Body3","Title 3","UserID 3"));
+             instance.databaseDAO().insert(new User("Body4","Title 4","UserID 4"));
+             return null;
+         }
+     }
+
+
+     static class DeleteAllUser extends AsyncTask<Void,Void,Void>{
+         @Override
+         protected Void doInBackground(Void... voids) {
+             instance.databaseDAO().deleteAllUsers();
              return null;
          }
      }
